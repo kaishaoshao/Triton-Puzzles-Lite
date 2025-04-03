@@ -552,7 +552,7 @@ def softmax_kernel_brute_force(
     mask_i = off_i < N0
 
     exp_sum = tl.zeros([B0], dtype=tl.float32)
-    x_max = tl.zeros([B0], dtype=tl.float32)
+    x_max = tl.full([B0], -float("inf"), dtype=tl.float32)
 
     for id_j in tl.range(0, T, B1):
         off_j = id_j + tl.arange(0, B1)
