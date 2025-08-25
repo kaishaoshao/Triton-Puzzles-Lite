@@ -215,6 +215,8 @@ def add_kernel(x_ptr, z_ptr, N0, B0: tl.constexpr):
     # We name the offsets of the pointers as "off_"
     off_x = tl.arange(0, B0)
     x = tl.load(x_ptr + off_x)
+    tl.store(z_ptr + off_x,  add_spec(x));
+
     # Finish me!
     return
 
@@ -237,6 +239,10 @@ def add2_spec(x: Float32[200,]) -> Float32[200,]:
 @triton.jit
 def add_mask2_kernel(x_ptr, z_ptr, N0, B0: tl.constexpr):
     # Finish me!
+    block_id = tl.program_id(0)
+    off_x = tl.arange(0, B0) + block_id * B0
+    x = tl.load(x_ptr + off_x, mask=off_x < N0)
+    tl.store(z_ptr + off_x, add2_spec(x), mask=off_x < N0)
     return
 
 
@@ -260,6 +266,7 @@ def add_vec_spec(x: Float32[32,], y: Float32[32,]) -> Float32[32, 32]:
 @triton.jit
 def add_vec_kernel(x_ptr, y_ptr, z_ptr, N0, N1, B0: tl.constexpr, B1: tl.constexpr):
     # Finish me!
+
     return
 
 
