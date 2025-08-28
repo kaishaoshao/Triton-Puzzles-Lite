@@ -355,8 +355,9 @@ def mul_relu_block_kernel(
 
     x = tl.load(x_ptr + off_x, mask=mask_x)
     y = tl.load(y_ptr + off_y, mask=mask_y)
+    z = x[None, :] * y[:, None]
 
-    # tl.store(z_ptr + off_z, , mask=mask_z)
+    tl.store(z_ptr + off_z, triton_relu2(z), mask=mask_z)
 
     return
 
