@@ -2,7 +2,10 @@ import triton
 import triton.language as tl
 import torch
 
+import triton_viz
+
 from display import print_end_line
+
 
 """
 Demo1
@@ -36,5 +39,11 @@ def run_demo1():
     print(f"Time: {ts:.4f} ts")
     print_end_line()
 
+# http://127.0.0.1:7860
+def run_triton_viz():
+    triton_viz.trace(demo1)[(1, 1, 1)](torch.ones(4, 3))
+    triton_viz.launch(share=False)
+
 if __name__ == "__main__":
-    run_demo1()
+    # run_demo1()
+    run_triton_viz()
