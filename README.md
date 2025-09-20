@@ -44,7 +44,7 @@ Check `puzzles.md` for the puzzle descriptions w/ pictures.
 
 ## Debug
 
-1. You can use `print` to directly print the intermediate values in Triton interpreter mode (CPU) to debug. For GPU, use `tl.static_print` or `tl.device_print` instead. See the [offcial documentation for debug Ops](https://triton-lang.org/main/python-api/triton.language.html#debug-ops).
+1. You can use `print` to directly print the intermediate values / their shapes in Triton interpreter mode (CPU) to debug. For GPU, use `tl.static_print` or `tl.device_print` instead. See the [offcial documentation for debug Ops](https://triton-lang.org/main/python-api/triton.language.html#debug-ops).
 
 2. For better debugging, we enhance the test function to print more information. If your output is different from the expected output, we will print them as well as the positions of the different values:
 
