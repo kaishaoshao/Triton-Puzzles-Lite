@@ -215,9 +215,9 @@ def add_kernel(x_ptr, z_ptr, N0, B0: tl.constexpr):
     # We name the offsets of the pointers as "off_"
     off_x = tl.arange(0, B0)
     x = tl.load(x_ptr + off_x)
-    tl.store(z_ptr + off_x,  add_spec(x));
-
     # Finish me!
+    z = x + 10.0
+    tl.store(z_ptr + off_x, z)
     return
 
 
@@ -239,10 +239,13 @@ def add2_spec(x: Float32[200,]) -> Float32[200,]:
 @triton.jit
 def add_mask2_kernel(x_ptr, z_ptr, N0, B0: tl.constexpr):
     # Finish me!
-    block_id = tl.program_id(0)
-    off_x = tl.arange(0, B0) + block_id * B0
-    x = tl.load(x_ptr + off_x, mask=off_x < N0)
-    tl.store(z_ptr + off_x, add2_spec(x), mask=off_x < N0)
+    pid = tl.program_id(0)
+    off_x = pid * B0 + tl.arange(0, B0)
+    mask = off_x < N0
+    x = tl.load(x_ptr + off_x, mask=mask)
+    z = x + 10.0
+    tl.store(z_ptr + off_x, z, mask=mask)
+
     return
 
 
@@ -265,15 +268,15 @@ def add_vec_spec(x: Float32[32,], y: Float32[32,]) -> Float32[32, 32]:
 
 @triton.jit
 def add_vec_kernel(x_ptr, y_ptr, z_ptr, N0, N1, B0: tl.constexpr, B1: tl.constexpr):
+    # Finish me!
     off_x = tl.arange(0, B0)
     off_y = tl.arange(0, B1)
-    off_z = off_x[:, None] * N1 +  off_y[None, :]
+    off_z = off_x[None, :]  + off_y[:, None] * N0
     x = tl.load(x_ptr + off_x)
+    tl.static_print("BLOCK_SIZE:", x[None, :])
     y = tl.load(y_ptr + off_y)
-
-    tl.store(z_ptr + off_z, add_vec_spec(x, y))
-    # Finish me!
-
+    z = x[None, :] + y[:, None]
+    tl.store(z_ptr + off_z, z)
     return
 
 
@@ -301,18 +304,6 @@ def add_vec_block_kernel(
     block_id_x = tl.program_id(0)
     block_id_y = tl.program_id(1)
     # Finish me!
-    off_x = tl.arange(0, B0) + block_id_x * B0
-    off_y = tl.arange(0, B1) + block_id_y * B1
-    off_z = off_y[:, None] * N0 + off_x[None, :]
-
-    mask_x = off_x < N0
-    mask_y = off_y < N1
-    mask_z = mask_y[:, None] & mask_x[None, :]
-
-    x = tl.load(x_ptr + off_x, mask=mask_x)
-    y = tl.load(y_ptr + off_y, mask=mask_y)
-    tl.store(z_ptr + off_z, add_vec_block_spec(x, y), mask=mask_z)
-
     return
 
 
@@ -332,11 +323,6 @@ Block size `B1` is always less than vector `y` length `N1`.
 def mul_relu_block_spec(x: Float32[100,], y: Float32[90,]) -> Float32[90, 100]:
     return torch.relu(x[None, :] * y[:, None])
 
-def triton_relu1(x):
-    return tl.maximum(x, 0.0)
-
-def triton_relu2(x):
-    return tl.where(x > 0, x, 0.0)
 
 @triton.jit
 def mul_relu_block_kernel(
@@ -345,20 +331,6 @@ def mul_relu_block_kernel(
     block_id_x = tl.program_id(0)
     block_id_y = tl.program_id(1)
     # Finish me!
-    off_x = tl.arange(0, B0) + block_id_x * B0
-    off_y = tl.arange(0, B1) + block_id_y * B1
-    off_z = off_y[:, None] * N0 + off_x[None, :]
-
-    mask_x = off_x < N0
-    mask_y = off_y < N1
-    mask_z = mask_y[:, None] & mask_x[None, :]
-
-    x = tl.load(x_ptr + off_x, mask=mask_x)
-    y = tl.load(y_ptr + off_y, mask=mask_y)
-    z = x[None, :] * y[:, None]
-
-    tl.store(z_ptr + off_z, triton_relu2(z), mask=mask_z)
-
     return
 
 
