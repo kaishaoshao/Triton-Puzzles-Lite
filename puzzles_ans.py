@@ -552,7 +552,7 @@ def softmax_kernel_brute_force(
     mask_i = off_i < N0
 
     exp_sum = tl.zeros([B0], dtype=tl.float32)
-    x_max = tl.zeros([B0], dtype=tl.float32)
+    x_max = tl.full([B0], -float("inf"), dtype=tl.float32)
 
     for id_j in tl.range(0, T, B1):
         off_j = id_j + tl.arange(0, B1)
@@ -883,16 +883,22 @@ def quant_dot_kernel(
         scale = tl.load(scale_ptr + off_scale, mask=mask_scale)
 
         # load shift (offset)
-        # (32,), each 32bits integer store FPINT(8)*4 shifts
-        shift = tl.load(offset_ptr + off_j, mask=mask_j)
+        # each 32bits integer store FPINT(8)*4 shifts
+        off_shift_l = l // FPINT // GROUP + tl.arange(0, B_MID // FPINT // GROUP)
+        mask_shift_l = off_shift_l < MID // GROUP // FPINT
+        off_shift = off_j[:, None] * (MID // GROUP // FPINT) + off_shift_l[None, :]
+        mask_shift = mask_j[:, None] & mask_shift_l[None, :]
+        shift = tl.load(offset_ptr + off_shift, mask=mask_shift)
+        # print(shift.shape)
 
         # load weight
         # note: our weight will be stored in 4bits.
-        off_weight_l = l + tl.arange(0, B_MID // FPINT)
+        off_weight_l = l // FPINT + tl.arange(0, B_MID // FPINT)
         mask_weight_l = off_weight_l < (MID // FPINT)
         off_weight = off_j[:, None] * (MID // FPINT) + off_weight_l[None, :]
         mask_weight = mask_j[:, None] & mask_weight_l[None, :]
         weight = tl.load(weight_ptr + off_weight, mask=mask_weight)
+        # print(weight.shape)
 
         # load activation as normal float
         off_l = l + tl.arange(0, B_MID)
@@ -905,7 +911,8 @@ def quant_dot_kernel(
         BITS = 32 // FPINT
         unpack_offs = tl.arange(0, FPINT) * BITS
         unpack_upperbound_mask = (1 << BITS) - 1
-        unpacked_shift = (shift[:, None] >> unpack_offs) & unpack_upperbound_mask
+        unpacked_shift = (shift >> unpack_offs) & unpack_upperbound_mask
+        # print(unpacked_shift.shape)
         unpacked_weight = (weight[:, :, None] >> unpack_offs) & unpack_upperbound_mask
         # quant transform
         # [BLOCK_J, 8, 1] * ([BLOCK_J, 8, 8] - [BLOCK_J, 8, 1])
@@ -913,9 +920,7 @@ def quant_dot_kernel(
             unpacked_weight - unpacked_shift[:, :, None]
         )
         # shape: [*, 64]
-        transformed_weight = transformed_weight.reshape(
-            unpacked_shift.shape[0], unpacked_shift.shape[-1] * FPINT
-        )
+        transformed_weight = transformed_weight.reshape(B0, B_MID)
 
         # compute
         z += tl.dot(transformed_weight, activation)

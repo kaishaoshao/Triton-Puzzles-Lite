@@ -44,7 +44,31 @@ Check `puzzles.md` for the puzzle descriptions w/ pictures.
 
 ## Debug
 
-1. You can use `print` to directly print the intermediate values in Triton interpreter mode (CPU) to debug. For GPU, use `tl.static_print` or `tl.device_print` instead. See the [offcial documentation for debug Ops](https://triton-lang.org/main/python-api/triton.language.html#debug-ops).
+1. You can use `print` to directly print the intermediate values / their shapes in Triton interpreter mode (CPU) to debug. For GPU, use `tl.static_print` or `tl.device_print` instead. See the [offcial documentation for debug Ops](https://triton-lang.org/main/python-api/triton.language.html#debug-ops).
+
+```python
+# In the Triton kernel program
+print("Weight: ", weight) # Print "weight" tensor
+>>> Weight:  [[ 64402 -53811   5705 -76124 -35175  42429  58555 -77519]
+ [-33853  47714 -48076 -94579  29209 -80145  31319 -63292]
+ [ 21065 -78242  81508 -47279 -71214 -45587 -80386  59789]
+ [ 39031  60930 -11005  99305 -23686 -51177 -99270 -94698]
+ [-58890  69804 -65105 -32702 -46150  27603  48390 -54706]
+ [ 39536 -39587 -38564  27663 -20774 -16824   8992  46506]
+ [-24661 -21011  89191  49598  -8730 -95667 -42347 -97858]
+ [ -9297  81289  59782 -75179 -30261 -11214 -67609 -46084]
+ [ 67937 -74551 -45982 -47662 -51844 -23186 -20091  -6341]
+ [ -1770  25156 -37889 -98371  50066  -4516 -95346 -24835]
+ [-60398 -68031  91756 -12160 -57719  -4944  99426 -85976]
+ [ -2413 -55587 -55574 -42096  30394 -25157  66776  83608]
+ [ 96417 -18400 -23771  38072 -57150  97775 -60829  59804]
+ [-75186 -44539 -87349  71411  69624 -45786 -71564 -48474]
+ [  5820 -19245 -45722  64354 -72452 -60228 -36410 -92923]
+ [ 75931 -99995 -21683 -62615 -21116  32662 -52115 -97739]]
+
+print("Weight Shape: ", weight.shape) # Print the shape of "weight" tensor
+>>> Weight Shape:  [constexpr[16], constexpr[8]]
+```
 
 2. For better debugging, we enhance the test function to print more information. If your output is different from the expected output, we will print them as well as the positions of the different values:
 
